@@ -2,7 +2,7 @@
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
 	<declaration>chan pegar, largar, desacompanhar, acompanhar;	// Ações de pegar/largar a lanterna e ações de acompanhar ou deixar de acompanhar o viajante que leva a lanterna
-int[0,1] L;		                                // O lado em que a lanterna se encontra
+int[0,1] L;                                     // O lado em que a lanterna se encontra
 clock relogio;		                            // Tempo global
 int [0,4] portador;                             // Variável que distingue o portador da lanterna
 </declaration>
@@ -105,7 +105,7 @@ portador == m_portador</label>
 			<source ref="id4"/>
 			<target ref="id6"/>
 			<label kind="synchronisation" x="96" y="176">largar?</label>
-			<label kind="assignment" x="32" y="144">L = 1 - L</label>
+			<label kind="assignment" x="68" y="153">L = 1 - L</label>
 		</transition>
 		<transition>
 			<source ref="id7"/>
@@ -122,6 +122,7 @@ Aventureiro1 = Aventureiro(um,1);
 Aventureiro2 = Aventureiro(dois,2);
 Aventureiro3 = Aventureiro(cinco,3); 
 Aventureiro4 = Aventureiro(dez,4);
+
 system Aventureiro1, Aventureiro2, Aventureiro3, Aventureiro4, Lanterna;</system>
 	<queries>
 		<query>
@@ -162,6 +163,10 @@ system Aventureiro1, Aventureiro2, Aventureiro3, Aventureiro4, Lanterna;</system
 		<query>
 			<formula>E&lt;&gt; Aventureiro1.fim and Aventureiro2.fim and Aventureiro3.fim and Aventureiro4.fim</formula>
 			<comment>Reachabillity: Estado final desejado</comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; not (Aventureiro1.inicio or Aventureiro2.inicio or Aventureiro3.inicio or Aventureiro4.inicio ) imply portador &gt; 0</formula>
+			<comment></comment>
 		</query>
 		<query>
 			<formula>E&lt;&gt; Aventureiro1.fim and Aventureiro2.fim and Aventureiro3.fim and Aventureiro4.fim and relogio==17</formula>
