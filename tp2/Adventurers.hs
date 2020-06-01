@@ -45,6 +45,14 @@ instance Eq State where
 gInit :: State
 gInit = const False
 
+test :: State
+test (Left P1) = True
+test (Left P2) = True
+test (Left P5) = False
+test (Left P10) = False 
+test (Right ()) = True
+
+
 -- Changes the state of the game for a given object
 changeState :: Objects -> State -> State
 changeState a s = let v = s a in (\x -> if x == a then not v else s x)
@@ -52,30 +60,41 @@ changeState a s = let v = s a in (\x -> if x == a then not v else s x)
 -- Changes the state of the game of a list of objects 
 mChangeState :: [Objects] -> State -> State
 mChangeState os s = foldr changeState s os
-                               
+
+
+-- Gets the adventurers that can grab the lantern to cross the bridge
+validAdv :: [Adventurer] -> State -> [Adventurer]
+validAdv [] _ = []
+validAdv (h:t) s = if s (Left h) == s (Right ()) then h : validAdv t s else validAdv t s
+
+-- Forms a combination of 2 Adventurers from a list of Objects
+combine :: Int -> [Adventurer] -> [[Adventurer]]
+combine 0 _ = [[]]
+combine _ [] = []
+combine n (x:xs) = map (x :) (combine (n-1) xs) ++ combine n xs
+
+
+-- Creates a list of Durations from a state and List of List of adventurers
+dList :: State -> [[Adventurer]] -> [Duration State]
+dList _ [] = []
+dList s (x:xs)
+   | length x == 1 =  
+      [wait (getTimeAdv(x !! 0)) $ return $ mChangeState [Left (x !! 0), Right ()] s] ++ dList s xs
+   | length x == 2 =
+      [wait (max (getTimeAdv (x !! 0)) (getTimeAdv(x !! 1))) $ return $ mChangeState [Left (x !! 0), Left (x !! 1), Right ()] s] ++ dList s xs
+
 
 {-- For a given state of the game, the function presents all the
 possible moves that the adventurers can make.  --}
 -- To implement
 allValidPlays :: State -> ListDur State
-allValidPlays s =  
-   LD [wait (getTimeAdv(P1)) $ return $ mChangeState [Left P1, Right ()] s,
-   wait (getTimeAdv(P2)) $ return $ mChangeState [Left P2, Right ()] s,
-   wait (getTimeAdv(P5)) $ return $ mChangeState [Left P5, Right ()] s,
-   wait (getTimeAdv(P10)) $ return $ mChangeState [Left P10, Right ()] s,
-   wait (getTimeAdv(P2)) $ return $ mChangeState [Left P1,Left P2, Right ()] s,
-   wait (getTimeAdv(P5)) $ return $ mChangeState [Left P1,Left P5, Right ()] s,
-   wait (getTimeAdv(P10)) $ return $ mChangeState [Left P1,Left P10, Right ()] s,
-   wait (getTimeAdv(P5)) $ return $ mChangeState [Left P2,Left P5, Right ()] s,
-   wait (getTimeAdv(P10)) $ return $ mChangeState [Left P2,Left P10, Right ()] s,
-   wait (getTimeAdv(P10)) $ return $ mChangeState [Left P5,Left P10, Right ()] s]
+allValidPlays s = let x = validAdv [P1,P2,P5,P10] s in LD (dList s (combine 2 x ++ combine 1 x))
+
 {-- For a given number n and initial state, the function calculates
 all possible n-sequences of moves that the adventures can make --}
--- To implement 
+-- To implement
 exec :: Int -> State -> ListDur State
-exec n s =  do s1 <- allValidPlays s
-               s2 <- allValidPlays s1
-               return s2
+exec n s =  allValidPlays s
 
 {-- Is it possible for all adventurers to be on the other side
 in <=17 min and not exceeding 5 moves ? --}
