@@ -48,7 +48,7 @@ gInit = const False
 test :: State
 test (Left P1) = True
 test (Left P2) = True
-test (Left P5) = False
+test (Left P5) = True
 test (Left P10) = False 
 test (Right ()) = True
 
@@ -94,19 +94,24 @@ allValidPlays s = let x = validAdv [P1,P2,P5,P10] s in LD (dList s (combine 2 x 
 all possible n-sequences of moves that the adventures can make --}
 -- To implement
 exec :: Int -> State -> ListDur State
-exec n s =  allValidPlays s
+exec 0 s = return s
+exec n s = do s1 <- allValidPlays s
+              exec (n-1) s1
 
 {-- Is it possible for all adventurers to be on the other side
 in <=17 min and not exceeding 5 moves ? --}
 -- To implement
 leq17 :: Bool
-leq17 = undefined
-
+leq17 = length x > 0 
+         where y = map (\x -> (getDuration x, getValue x)) $ remLD (exec 5 gInit)
+               x = filter (\x -> fst x <= 17 && snd x == const True) y
 {-- Is it possible for all adventurers to be on the other side
 in < 17 min ? --}
 -- To implement
 l17 :: Bool
-l17 = undefined
+l17 = length x > 0 
+         where y = map (\x -> (getDuration x, getValue x)) $ remLD (exec 5 gInit)
+               x = filter (\x -> fst x < 17 && snd x == const True) y
 
 
 --------------------------------------------------------------------------
@@ -126,12 +131,17 @@ instance Functor ListDur where
 -- To implement
 instance Applicative ListDur where
    pure x = LD [Duration (0,x)]
-   l1 <*> l2 = undefined
+   l1 <*> l2 = LD $ do x <- remLD l1
+                       y <- remLD l2
+                       g(x,y) where
+                          g(Duration(d,f),Duration(d',x)) = return (Duration(d+d',f x))
 
 -- To implement
 instance Monad ListDur where
-   return = undefined
-   l >>= k = undefined
+   return = pure
+   l >>= k = LD $ do x <- remLD l
+                     g x where
+                        g(Duration(d,x)) = let u = (remLD (k x)) in map (\x -> Duration(getDuration x + d,getValue x)) u
 
 manyChoice :: [ListDur a] -> ListDur a
 manyChoice = LD . concat . (map remLD)
